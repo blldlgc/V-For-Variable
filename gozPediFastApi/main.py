@@ -33,6 +33,9 @@ async def analyze_image(file: UploadFile = File(...)):
     img = cv2.imread(image_path)
     if img is None:
         return JSONResponse(content={"error": "Geçersiz görsel"}, status_code=400)
+    
+    # ✅ 640x640'a yeniden boyutlandır
+    img = cv2.resize(img, (640, 640))
 
     results = model(image_path, conf=0.3, task="segment")[0]
     masks = results.masks
