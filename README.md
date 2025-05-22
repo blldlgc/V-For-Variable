@@ -101,7 +101,7 @@ Aşağıda projede kullanılan tüm modüllerin zaman ve mekân (bellek) karmaş
 
 ## 📌 Demo
 
-Projeye ait demo videosu [demo.mp4](demo_link_here) olarak eklenmelidir.
+Projeye ait demo videosu: [video.mp4](./video.mp4)
 
 ---
 
