@@ -7,10 +7,14 @@ import tempfile
 import os
 import base64
 from ultralytics import YOLO
+from tensorflow.keras.models import load_model
 
 app = FastAPI()
-model = YOLO("yolov8_model.pt")
-sapma_orani = 10  # sadece debug için kalabilir, artık karar backend'de verilmiyor
+
+# 🔍 Modellerin yüklenmesi
+segment_model = YOLO("yolov8_model.pt")  # Segmentasyon modeli
+classifier_model = load_model("eye_pad_model.keras")  # Keras sınıflandırma modeli
+class_names = ["LEKELI", "SAGLAM"]  # Eğitildiği sıraya göre güncelle
 
 def get_ellipse_point(center, axes, angle_deg, direction):
     angle_rad = np.deg2rad(angle_deg)
@@ -51,7 +55,7 @@ async def analyze_image(file: UploadFile = File(...)):
         return JSONResponse(content={"error": "Geçersiz görsel: Dosya okunamadı"}, status_code=400)
     
     img = cv2.resize(img, (640, 640))
-    results = model(img, conf=0.3, task="segment")[0]
+    results = segment_model(img, conf=0.3, task="segment")[0]
     masks = results.masks
     if masks is None:
         print("⚠️ Segmentasyon maskesi bulunamadı.")
@@ -78,6 +82,7 @@ async def analyze_image(file: UploadFile = File(...)):
         "std_dev": None,
         "fit_error_ic": None,
         "fit_error_dis": None,
+        "keras_prediction": None,
         "visual_base64": None
     }
 
@@ -125,14 +130,36 @@ async def analyze_image(file: UploadFile = File(...)):
             except:
                 continue
 
-        # Görsel encode et
+        # 🔍 Keras sınıflandırma
+        try:
+            keras_img = cv2.resize(img, (224, 224))
+            keras_img = keras_img.astype(np.float32) / 255.0
+            keras_input = np.expand_dims(keras_img, axis=0)
+
+            prediction = classifier_model.predict(keras_input)
+            predicted_class = class_names[np.argmax(prediction)]
+            confidence_score = float(np.max(prediction))
+
+            json_out["keras_prediction"] = {
+                "class": predicted_class,
+                "confidence": confidence_score
+            }
+
+            cv2.putText(drawn_img, f"Keras: {predicted_class} ({confidence_score:.2f})",
+                        (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 200, 0), 2)
+        except Exception as e:
+            print(f"⚠️ Keras tahmini hatası: {e}")
+            json_out["keras_prediction"] = {
+                "error": "Keras modeli çalıştırılamadı"
+            }
+
         drawn_bgr = cv2.cvtColor(drawn_img, cv2.COLOR_RGB2BGR)
         _, buffer = cv2.imencode('.jpg', drawn_bgr)
         img_base64 = base64.b64encode(buffer).decode('utf-8')
         json_out["visual_base64"] = img_base64
     else:
-        print("⚠️ Gerekli etiketler bulunamadı: 'goz_pedi_ic' veya 'goz_pedi_dis' eksik.")
+        print("⚠️ Gerekli etiketler eksik: 'goz_pedi_ic' veya 'goz_pedi_dis'")
 
     os.remove(image_path)
-    print("✅ İşlem tamamlandı.\n")
+    print("✅ İşlem tamamlandı.")
     return JSONResponse(content=json_out)
