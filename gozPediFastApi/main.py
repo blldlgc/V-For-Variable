@@ -10,7 +10,7 @@ from ultralytics import YOLO
 
 app = FastAPI()
 model = YOLO("yolov8_model.pt")
-sapma_orani = 10
+sapma_orani = 10  # sadece debug için kalabilir, artık karar backend'de verilmiyor
 
 def get_ellipse_point(center, axes, angle_deg, direction):
     angle_rad = np.deg2rad(angle_deg)
@@ -24,22 +24,37 @@ def get_ellipse_point(center, axes, angle_deg, direction):
     yr = x * np.sin(angle_rad) + y * np.cos(angle_rad)
     return int(cx + xr), int(cy + yr)
 
+def ellipse_fit_error(contour, ellipse):
+    ellipse_points = cv2.ellipse2Poly(
+        center=(int(ellipse[0][0]), int(ellipse[0][1])),
+        axes=(int(ellipse[1][0] / 2), int(ellipse[1][1] / 2)),
+        angle=int(ellipse[2]),
+        arcStart=0,
+        arcEnd=360,
+        delta=5
+    )
+    min_len = min(len(contour), len(ellipse_points))
+    distances = [np.linalg.norm(contour[i][0] - ellipse_points[i]) for i in range(min_len)]
+    return float(np.mean(distances))
+
 @app.post("/analyze/")
 async def analyze_image(file: UploadFile = File(...)):
+    print(f"📥 Yeni istek alındı: {file.filename}")
+    
     with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
         tmp.write(await file.read())
         image_path = tmp.name
 
     img = cv2.imread(image_path)
     if img is None:
-        return JSONResponse(content={"error": "Geçersiz görsel"}, status_code=400)
+        print("❌ Geçersiz görsel. cv2.imread() None döndü.")
+        return JSONResponse(content={"error": "Geçersiz görsel: Dosya okunamadı"}, status_code=400)
     
-    # ✅ 640x640'a yeniden boyutlandır
     img = cv2.resize(img, (640, 640))
-
-    results = model(image_path, conf=0.3, task="segment")[0]
+    results = model(img, conf=0.3, task="segment")[0]
     masks = results.masks
     if masks is None:
+        print("⚠️ Segmentasyon maskesi bulunamadı.")
         return JSONResponse(content={"error": "Segmentasyon maskesi bulunamadı"}, status_code=400)
 
     img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -59,10 +74,10 @@ async def analyze_image(file: UploadFile = File(...)):
 
     json_out = {
         "image": file.filename,
-        "threshold_px": sapma_orani,
         "measurements": {},
         "std_dev": None,
-        "status": "undefined",
+        "fit_error_ic": None,
+        "fit_error_dis": None,
         "visual_base64": None
     }
 
@@ -92,13 +107,32 @@ async def analyze_image(file: UploadFile = File(...)):
 
         std_dev = float(np.std(distances))
         json_out["std_dev"] = std_dev
-        json_out["status"] = "hatalı" if std_dev > sapma_orani else "hatasız"
 
-        # Görseli base64 olarak encode et
+        # Fit error hesapla
+        for label in ["goz_pedi_ic", "goz_pedi_dis"]:
+            try:
+                mask_idx = list(results.names.keys())[list(results.names.values()).index(label)]
+                mask = (masks.data[mask_idx].cpu().numpy() * 255).astype(np.uint8)
+                cnts, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+                if cnts:
+                    cnt = max(cnts, key=cv2.contourArea)
+                    if len(cnt) >= 5:
+                        err = ellipse_fit_error(cnt, mask_info[label])
+                        if label == "goz_pedi_ic":
+                            json_out["fit_error_ic"] = err
+                        else:
+                            json_out["fit_error_dis"] = err
+            except:
+                continue
+
+        # Görsel encode et
         drawn_bgr = cv2.cvtColor(drawn_img, cv2.COLOR_RGB2BGR)
         _, buffer = cv2.imencode('.jpg', drawn_bgr)
         img_base64 = base64.b64encode(buffer).decode('utf-8')
         json_out["visual_base64"] = img_base64
+    else:
+        print("⚠️ Gerekli etiketler bulunamadı: 'goz_pedi_ic' veya 'goz_pedi_dis' eksik.")
 
     os.remove(image_path)
+    print("✅ İşlem tamamlandı.\n")
     return JSONResponse(content=json_out)
