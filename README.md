@@ -64,19 +64,38 @@ jupyter notebook
 
 ---
 
-## 🧠 Kullanılan Modeller ve Karmaşıklık Analizi
+## 🧮 Algoritma Karmaşıklığı – Big-O Notasyonu
 
-### 1. YOLOv8 Segmentasyon Modeli
+Aşağıda projede kullanılan tüm modüllerin zaman ve mekân (bellek) karmaşıklıkları Big-O notasyonu ile verilmiştir:
 
-* **Amaç:** Göz pedlerini tespit etme ve maskeyle segmentasyon.
-* **Zaman Karmaşıklığı:** O(n)
-* **Mekan Karmaşıklığı:** O(n)
+| Bileşen / Algoritma                     | Zaman Karmaşıklığı     | Mekân Karmaşıklığı     | Açıklama |
+|----------------------------------------|------------------------|------------------------|----------|
+| YOLOv8 Segmentasyon                    | O(n)                  | O(m)                  | n: piksel sayısı (640x640), m: model ağırlıkları + geçici bellek |
+| `cv2.fitEllipse()`                     | O(k)                  | O(1)                  | k: kontur noktası sayısı |
+| `get_ellipse_point()` (uç nokta)       | O(1)                  | O(1)                  | Sabit trigonometrik işlemler |
+| Noktalar arası uzaklık (`np.linalg.norm`) | O(1)               | O(1)                  | İki nokta arası mesafe |
+| JSON raporlama                         | O(n)                  | O(n)                  | n: analiz edilen yön sayısı |
+| 📦 **Keras Leke Sınıflandırma**        |                        |                        |          |
+| `ImageDataGenerator()`                | O(1)                  | O(1)                  | Parametre tanımı |
+| `flow_from_directory()`               | O(n)                  | O(n)                  | n: klasördeki görsel sayısı |
+| `MobileNetV2` (özellik çıkarımı)      | O(f)                  | O(f)                  | f: sabit FLOP (~3.5M parametre) |
+| `GlobalAveragePooling2D()`            | O(h×w×c)              | O(c)                  | Sabit çıktı boyutu |
+| `Dense(2, softmax)` katmanı           | O(c)                  | O(c)                  | c: giriş boyutu |
+| `Dropout(0.5)` (eğitimde)             | O(c)                  | O(c)                  | Eğitim sırasında maskeleme |
+| `model.fit()` (15 epoch)              | O(e·n·f)              | O(b·f)                | e: epoch, n: örnek sayısı, b: batch size |
+| `model.predict(img)`                  | O(f)                  | O(f)                  | Tek görsel tahmini |
 
-### 2. Keras CNN Modeli
+---
 
-* **Amaç:** Segmentasyondan sonra her pedin yapısal hatasını sınıflandırmak.
-* **Zaman Karmaşıklığı:** O(n \* k^2)
-* **Mekan Karmaşıklığı:** O(n)
+### 🧾 Terimler:
+
+- `n`: Görsel sayısı (veri kümesi boyutu)
+- `k`: Kontur noktası sayısı
+- `m`: YOLO model parametreleri
+- `f`: MobileNetV2 hesaplama büyüklüğü (sabit ≈ 3.5M parametre)
+- `e`: Epoch sayısı (örnek: 15)
+- `b`: Batch size (örnek: 16)
+- `h×w×c`: CNN'den çıkan son katmanın boyutu (sabit)
 
 ---
 
