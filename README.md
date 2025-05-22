@@ -1,6 +1,6 @@
-# 🧠 TTG5 Hackathon 2025 - Medikal Göz Pedi Kalite Kontrol Sistemi
+# 🧠 TTG5 Hackathon 2025 - Medikal Göz Pedi Kalite Kontrol Sistemi #ttg5hackathon2025
 
-Bu proje, **Turgutlu Teknoloji Günleri 2025** kapsamında geliştirilen bir görüntü işleme ve makine öğrenmesi tabanlı sistemdir. Amaç, üretim hattında ilerleyen medikal göz pedlerinin **leke, yırtık, renk farkı** gibi kusurlarını tespit edip sınıflandırarak hatalı ürünleri sağlamlardan ayırmaktır.
+Bu proje, **Turgutlu Teknoloji Günleri 2025** kapsamında geliştirilen bir görüntü işleme ve makine öğrenmesi tabanlı sistemdir. Amaç, üretim hattında ilerleyen medikal göz pedlerinin **leke, yırtık, renk farkı** gibi kusurlarını tespit edip sınıflandırarak hatalı ürünleri sağlamlardan ayırmaktır.  
 
 ## 📁 Proje Yapısı
 
