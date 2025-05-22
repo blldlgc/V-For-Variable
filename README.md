@@ -80,12 +80,6 @@ jupyter notebook
 
 ---
 
-## ⏱ FPS Testi (Gerçek Zamanlılık)
-
-Mobil kamera ile yapılan testlerde sistem **1 dakikada ortalama 43** görseli işleyebilmektedir.
-
----
-
 ## 📌 Demo
 
 Projeye ait demo videosu [demo.mp4](demo_link_here) olarak eklenmelidir.
