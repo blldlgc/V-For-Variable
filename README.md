@@ -8,7 +8,7 @@ Bu proje, **Turgutlu Teknoloji Günleri 2025** kapsamında geliştirilen bir gö
 gozPediFastApi/         → REST API servis dosyaları
 runs_v2/                → YOLOv8 tahmin çıktı klasörü
 Unity/                  → Unity simülasyon projesi
-iOS/                    → iOS mobil uygulama dosyaları
+EyePadRecognizer2 11/   → iOS mobil uygulama dosyaları
 hackathon.ipynb         → Eğitim ve test Jupyter defteri
 yolov8_model.pt         → YOLOv8 segmentasyon modeli
 eye_pad_model.keras     → Keras sınıflandırma modeli
@@ -47,7 +47,7 @@ jupyter notebook
 
 ## 📱 iOS Mobil Uygulama
 
-* `iOS/` klasörü, Swift diliyle geliştirilmiş olan iOS uygulama dosyalarını içerir.
+* `EyePadRecognizer2 11/` klasörü, Swift diliyle geliştirilmiş olan iOS uygulama dosyalarını içerir.
 * Uygulama, cihaz kamerası ile fotoğraf çeker ve bu görseli FastAPI sunucusuna gönderir.
 * API'den gelen sınıflandırma sonucunu kullanıcıya anlık olarak sunar.
 * Kullanıcılar hata oranı eşik değerini mobil arayüzden belirleyebilir.
